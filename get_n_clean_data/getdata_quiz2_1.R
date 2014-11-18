@@ -13,7 +13,7 @@ gtoken <- config(token = github_token)
 resp <- GET("https://api.github.com/users/jtleek/repos", gtoken)
 stop_for_status(resp)
 siteContent <- content(resp)
-con -
+
 siteData <- fromJSON(toJSON(siteContent))
 colnames(siteData)
 siteData[siteData$name == "datasharing", c("url", "name", "created_at")]
