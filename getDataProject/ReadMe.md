@@ -35,6 +35,11 @@ steps followed in the script are as below:
 	6. Then it extracts the tidy data set with mean of the measurements grouped by activity and subject. This is accomplished using 'aggregate()' function, which returns a data.frame. (using 'tapply()' would have returned a vector).
 	7. Finally it writes this tidy data set into a text file, 'getDataProject_TidyDataSet.txt'.
 	
+Minor things:
+	
+	read.table for test and training data use attribute the check.names = FALSE because the measurement names have special characters 
+	and would get converted to dots '.', otherwise.
+
 NOTE that the actual scripts have very little comments in it.
 Actually it is considered best practice to have little comment in code. Rather the variable names and function names 
 should best describe the intent of the script/program.
