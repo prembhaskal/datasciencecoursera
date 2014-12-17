@@ -12,7 +12,8 @@ baltimoreEmissions <- aggregate(Emissions ~ year, data = baltimoreData, sum)
 png(filename = "plot2.png", width = 480, height = 480, units = "px")
 
 with(baltimoreEmissions, plot(year, Emissions, type = "p", 
-     xlab = "year", ylab = "PM2.5 emission in Baltimore (in tonnes)"),
+     xlab = "year", ylab = "PM2.5 emission in Baltimore (in tonnes)",
+     main = "PM2.5 Emission in Baltimore",),
      pch = 19, col = "black")
 
 with(baltimoreEmissions, lines(year, Emissions))

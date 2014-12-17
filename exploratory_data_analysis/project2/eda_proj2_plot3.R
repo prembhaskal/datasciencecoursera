@@ -19,6 +19,7 @@ g <- ggplot(emissionsByYearType, aes(x = year, y = Emissions))
 g <- g + geom_point() + geom_line() 
 g <- g + facet_grid( . ~ type)
 g <- g + labs(x = "year", y = "PM2.5 emissions (in tonnes)")
+g <- g + ggtitle("PM2 Emission by different sources")
 print(g)
 
 dev.off()
