@@ -20,6 +20,9 @@ motorSCC <- SCC[grepl("motor", SCC$Short.Name, ignore.case = TRUE), ]
 # merge the cityData and motor vehicles data together.
 motorEmissionData <- merge(x = cityData, y = motorSCC, by.x = "SCC", by.y = "SCC")
 
+# aggreate emissions by year and city.
+motorAggData <- aggregate(Emissions ~ year + fips, data = motorEmissionData, sum)
+
 # initiate a png device
 png(filename = "plot6.png", width = 800, height = 480, units = "px")
 
