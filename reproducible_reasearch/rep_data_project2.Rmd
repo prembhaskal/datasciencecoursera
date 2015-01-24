@@ -1,0 +1,151 @@
+---
+title: "Analysis of effects of major weather events in the United States"
+author: "Premkumar Bhaskal"
+date: "Saturday, January 24, 2015"
+output: html_document
+---
+
+###  Summary
+This project involves exploring the U.S. National Oceanic and Atmospheric Administration's (NOAA) storm 
+database. This database tracks characteristics of major storms and weather events in the United States,
+including when and where they occur, as well as estimates of any fatalities, injuries, and property damage.
+Specifically this analysis is to find out two things.
+ 1.  The events which are most harmful with respect to population health.
+ 2.  The events which have greatest economic consequences.
+
+###  Data Processing
+```{r loading libraries}
+# required libraries
+  library(dplyr)
+  library(ggplot2)
+  library(knitr)
+```
+
+
+```{r setoptions, echo = FALSE}
+# setting global options.
+opts_chunk$set(fig.width = 12)
+```
+
+####  Check out the data
+Since the csv file is very big, reading the first few lines to check the format of the data present.
+```{r verifying_data}
+# checking the data before loading.
+  con <- file("StormData.csv.bz2")
+  fileData <- readLines(con, 10)
+  close(con)
+```
+  
+The file is plain csv, so reading it directly. (note that read.csv() reads compressed file directly without need to uncompress)
+```{r loading_csv, cache = TRUE}
+  stormData <- read.csv("StormData.csv.bz2")
+```
+  
+Once the file is loaded, checking the size of the data. and checking the different types of events present.
+Since total events are quite large, it is better to plot only top events.
+```{r checking_out_data}
+# checking out the data, dimensions etc.
+  dim(stormData)
+# analyzing types of events
+  length(unique(stormData$EVTYPE))
+```
+
+The events causing more fatalities and injuries are treated separtely.  
+First finding the total fatalities caused by each of the different event and storing the top 10 events.
+```{r fatalities_analysis}
+# finding events causing fatalities.
+  fatalitiesVsEvtype <- aggregate(FATALITIES ~ EVTYPE, data = stormData, sum)
+  fatalitiesVsEvtype <- fatalitiesVsEvtype[order(fatalitiesVsEvtype$FATALITIES, decreasing = TRUE), ]
+# top events causing major fatalities
+  topEventForFatalities <- head(fatalitiesVsEvtype, 10)
+```
+
+Next finding the total injuries caused by each of the different event and storing the top 10 events.
+```{r injuries_analysis}
+# finding events causing injuries.
+  injuriesVsEvtype <- aggregate(INJURIES ~ EVTYPE, data = stormData, sum)
+  injuriesVsEvtype <- injuriesVsEvtype[order(injuriesVsEvtype$INJURIES, decreasing = TRUE),]
+# top events causing major injuries.
+  topEventForInjuries <- head(injuriesVsEvtype, 10)
+```
+
+Finding the events causing financial damages.  
+The damages are separated as crop damages and property damages. The damages are provided in 2 columns.
+The value part in one of the column like (CROPDMG and PROPDMG) and the exponent part in other column (CROPDMGEXP and PROPDMGEXP). The exponent part could either be a number or it can be a character like K, M, B, denoting kilo, Mega and Billion etc.  
+To calculate, value should be multiplied with exponent (raised to 10).  
+For this, the exponent column in the data is converted to upper case. Then each character in(H,K,M,B) is mapped to corresponding numerical value. All other characters (like ?,-,, etc) are mapped to 0 (so that 10^0 == 1).
+A column is added for each of the property and crop damage in the existing data. Then a new column 
+'totalDamage' is added using the below formula  
+"totalDamage = propdmg * 10^propexp + cropdmg * 10^cropexp"  
+
+Finally the totalDamage caused by each of the different event is found and the top 10 events are stored.
+```{r damage_analysis}
+# convert all to upper case
+  stormData$PROPDMGEXP <- toupper(stormData$PROPDMGEXP)
+  stormData$CROPDMGEXP <- toupper(stormData$CROPDMGEXP)
+# convert non character exponent to 0
+  stormData[!grepl("[K|M|H|B|0-9]", stormData$PROPDMGEXP), "PROPDMGEXP"] <- 0
+  stormData[!grepl("[K|M|H|B|0-9]", stormData$CROPDMGEXP), "CROPDMGEXP"] <- 0
+  
+# map for character vs exponential values.
+  char <- c(0,1,2,3,4,5,6,7,8,9,"H","K","M","B")  
+  val <- c(0,1,2,3,4,5,6,7,8,9,2,3,6,9)
+  expVsVal <- data.frame(char, val)
+  
+  colnames(expVsVal) <- c("char", "propexp")
+  stormData <- merge(x = stormData, y = expVsVal, by.x = "PROPDMGEXP", by.y = "char")
+  
+  colnames(expVsVal) <- c("char", "cropexp")
+  stormData <- merge(x = stormData, y = expVsVal, by.x = "CROPDMGEXP", by.y = "char")
+  
+  stormData <- mutate(stormData, totalDamage  = PROPDMG * 10 ^ propexp + CROPDMG * 10 ^ cropexp)
+  
+# group events by total damage
+  totalDamageVsEvtType <- aggregate(totalDamage ~ EVTYPE, data = stormData, sum)
+# getting the events causing maximum damage
+  totalDamageVsEvtType <- totalDamageVsEvtType[order(totalDamageVsEvtType$totalDamage, decreasing = TRUE), ]
+  
+# dividing by billion to fit the scale
+  totalDamageVsEvtType$totalDamage <- totalDamageVsEvtType$totalDamage / 10^9
+
+# top events causing financial damages
+  topEventsForDamage <- head(totalDamageVsEvtType, 10)
+  
+```
+
+###  Results
+Below results depict the events reponsible for maximum fatalities, injuries and economical damage.
+The table show the top 10 events, followed by a bar plot comparing the different events.
+``` {r results}
+  kable(topEventForFatalities, caption = "top events causing fatalities", 
+        format = "markdown", row.names = FALSE)
+  
+  g <- ggplot(data = topEventForFatalities, aes(x = EVTYPE, y = FATALITIES))
+  g <- g + geom_bar(stat = "identity")
+  g <- g + labs(x = "event", y = "total fatalities")
+  g <- g + ggtitle("top events causing fatalities")
+  g <- g + theme(axis.text.x = element_text(angle = 90))
+  print(g)
+  
+  kable(topEventForInjuries, caption = "top events causing injuries",
+        format = "markdown", row.names = FALSE)
+  
+  g <- ggplot(data = topEventForInjuries, aes(x = EVTYPE, y = INJURIES))
+  g <- g + geom_bar(stat = "identity")
+  g <- g + labs(x = "event", y = "total injuries")
+  g <- g + ggtitle("top events causing injuries")
+  g <- g + theme(axis.text.x = element_text(angle = 90))
+  print(g)
+  
+  kable(topEventsForDamage, caption = "top events causing damages",
+        format = "markdown", row.names = FALSE)
+  
+  g <- ggplot(data = topEventsForDamage, aes(x = EVTYPE, y = totalDamage))
+  g <- g + geom_bar(stat = "identity")
+  g <- g + labs(x = "event", y = "total damages in Billion Dollars")
+  g <- g + ggtitle("top events causing financial damages")
+  g <- g + theme(axis.text.x = element_text(angle = 90))
+  print(g)
+```
+
+

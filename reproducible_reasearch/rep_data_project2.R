@@ -1,22 +1,23 @@
 # required libraries
   library(dplyr)
   library(ggplot2)
+  library(knitr)
 
 # load the data
 
-  con <- file("StormData.csv")
+  con <- file("StormData.csv.bz2")
   fileData <- readLines(con, 10)
   close(con)
 
-  stormData <- read.csv("StormData.csv")
+  stormData <- read.csv("StormData.csv.bz2")
   
   summary(stormData)
   dim(stormData)
   
-# analysing types of events
+# analyzing types of events
   length(unique(stormData$EVTYPE))
   
-# finding fatalities causing harmful events.
+# finding events vs total fatalities.
   fatalitiesVsEvtype <- aggregate(FATALITIES ~ EVTYPE, data = stormData, sum)
   fatalitiesVsEvtype <- fatalitiesVsEvtype[order(fatalitiesVsEvtype$FATALITIES, decreasing = TRUE), ]
   
@@ -35,12 +36,13 @@
   g <- g + theme(axis.text.x = element_text(angle = 90))
   print(g)
   
-# finding injuries causing events
+# finding events causing injuries.
   injuriesVsEvtype <- aggregate(INJURIES ~ EVTYPE, data = stormData, sum)
   injuriesVsEvtype <- injuriesVsEvtype[order(injuriesVsEvtype$INJURIES, decreasing = TRUE),]
   
 # top events causing major injuries.
   topEventForInjuries <- head(injuriesVsEvtype, 10)
+# plotting 
   g <- ggplot(data = topEventForInjuries, aes(x = EVTYPE, y = INJURIES))
   g <- g + geom_bar(stat = "identity")
   g <- g + labs(x = "event", y = "total injuries")
@@ -51,7 +53,7 @@
 # convert all to upper case
   stormData$PROPDMGEXP <- toupper(stormData$PROPDMGEXP)
   stormData$CROPDMGEXP <- toupper(stormData$CROPDMGEXP)
-# convert non character exponent to 1
+# convert non character exponent to 0
   stormData[!grepl("[K|M|H|B|0-9]", stormData$PROPDMGEXP), "PROPDMGEXP"] <- 0
   stormData[!grepl("[K|M|H|B|0-9]", stormData$CROPDMGEXP), "CROPDMGEXP"] <- 0
   
@@ -82,14 +84,15 @@
   totalDamageVsEvtType <- totalDamageVsEvtType[totalDamageVsEvtType$totalDamage > 0,]
   
   head(totalDamageVsEvtType, 10)
-# taking logs to fit the scale
+  
+# dividing by billion to fit the scale
   totalDamageVsEvtType$totalDamage <- totalDamageVsEvtType$totalDamage/10^9
 # events causing damage
   topEventsForDamage <- head(totalDamageVsEvtType, 10)
   
   g <- ggplot(data = topEventsForDamage, aes(x = EVTYPE, y = totalDamage))
   g <- g + geom_bar(stat = "identity")
-  g <- g + labs(x = "event", y = "total damages (in Billion Dollars)")
+  g <- g + labs(x = "event", y = "total damages in Billion Dollars")
   g <- g + ggtitle("top events causing financial damages")
   g <- g + theme(axis.text.x = element_text(angle = 90))
   print(g)
