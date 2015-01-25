@@ -27,7 +27,7 @@ Specifically this analysis is to find out two things.
 opts_chunk$set(fig.width = 12)
 ```
 
-####  Check out the data
+####  Checking out the data
 Since the csv file is very big, reading the first few lines to check the format of the data present.
 ```{r verifying_data}
 # checking the data before loading.
@@ -36,7 +36,8 @@ Since the csv file is very big, reading the first few lines to check the format 
   close(con)
 ```
   
-The file is plain csv, so reading it directly. (note that read.csv() reads compressed file directly without need to uncompress)
+The file is plain csv, so reading it directly. (note that read.csv() reads compressed file directly without 
+the  need to uncompress)
 ```{r loading_csv, cache = TRUE}
   stormData <- read.csv("StormData.csv.bz2")
 ```
@@ -48,6 +49,53 @@ Since total events are quite large, it is better to plot only top events.
   dim(stormData)
 # analyzing types of events
   length(unique(stormData$EVTYPE))
+```
+
+### Cleaning weather events.
+  First finding the unique activities and then sorting them , then writing to a file and then analyzing it.
+  After analysing the file we understand that weather event column has lot of inconsistencies. Here we try
+  to clean up some of these. Some cleaning is done by using below steps.  
+  1. Converting to upper case.  
+  2. Replacing synonyms with common terms.  
+  3. Correcting spelling mistakes.  
+```{r clean_weather_event}
+  stormData$EVTYPE <- toupper(stormData$EVTYPE)
+  
+  stormData$EVTYPE <- stormData$EVTYPE[order(stormData$EVTYPE)]
+  write.table(stormData$EVTYPE, "weather_events.txt")
+  
+  stormData$EVTYPE <- gsub("WINDS", "WIND", stormData$EVTYPE)
+  stormData$EVTYPE <- gsub(".*HEAVY SNOW.*", "HEAVY SNOW", stormData$EVTYPE)
+  stormData$EVTYPE <- gsub(".*BLIZZARD.*", "HEAVY SNOW", stormData$EVTYPE)
+  stormData$EVTYPE <- gsub(".*TSTM.*", "THUNDERSTORM", stormData$EVTYPE)
+  stormData$EVTYPE <- gsub(".*THUNDERSTORM.*", "THUNDERSTORM", stormData$EVTYPE)
+  stormData$EVTYPE <- gsub("COLD.*", "COLD", stormData$EVTYPE)
+  stormData$EVTYPE <- gsub(".*DRY MICROBURST.*", "DRY MICROBURST", stormData$EVTYPE)
+  stormData$EVTYPE <- gsub(".*FLASH.*FLOOD.*", "FLOOD", stormData$EVTYPE)
+  stormData$EVTYPE <- gsub(".*HAIL.*", "HAIL", stormData$EVTYPE)
+  stormData$EVTYPE <- gsub("PRECI.*TION", "RAIN", stormData$EVTYPE)
+  stormData$EVTYPE <- gsub("RAINFALL", "RAIN", stormData$EVTYPE)
+  stormData$EVTYPE <- gsub(".*HEAVY.*RAIN.*", "RAIN", stormData$EVTYPE)
+  stormData$EVTYPE <- gsub(".*WATERSPOUT.*", "WATERSPOUT", stormData$EVTYPE)
+  stormData$EVTYPE <- gsub(".*THU.*TORM.*", "THUNDERSTORM", stormData$EVTYPE)
+  stormData$EVTYPE <- gsub("SNOW.*", "SNOW", stormData$EVTYPE)
+  stormData$EVTYPE <- gsub("ICE.*", "ICE", stormData$EVTYPE)
+  stormData$EVTYPE <- gsub(".*HURRICANE.*", "HURRICANE", stormData$EVTYPE)
+  stormData$EVTYPE <- gsub(".*HIGH.*WIND.*", "HIGH WIND", stormData$EVTYPE)
+  stormData$EVTYPE <- gsub(".*LIG.*ING.*", "LIGHTNING", stormData$EVTYPE)
+  stormData$EVTYPE <- gsub(".*FREEZING.*", "FREEZING", stormData$EVTYPE)
+  stormData$EVTYPE <- gsub("FLOOD.*", "FLOOD", stormData$EVTYPE)
+  stormData$EVTYPE <- gsub(".*TORNADO.*", "TORNADO", stormData$EVTYPE)
+  stormData$EVTYPE <- gsub(".*TORNDAO.*", "TORNADO", stormData$EVTYPE)
+  stormData$EVTYPE <- gsub(".*TROPICAL STORM.*", "TROPICAL STORM", stormData$EVTYPE)
+  stormData$EVTYPE <- gsub(".*HEAVY SURF.*", "HEAVY SURF", stormData$EVTYPE)
+  stormData$EVTYPE <- gsub("EXTREME", "EXCESSIVE", stormData$EVTYPE)
+  stormData$EVTYPE <- gsub(".*EXCESSIVE.*HEAT.*", "EXCESSIVE HEAT", stormData$EVTYPE)
+  stormData$EVTYPE <- gsub(".*EXCESSIVE.*WIND.*", "EXCESSIVE WIND", stormData$EVTYPE)
+  stormData$EVTYPE <- gsub("DRY.*", "DRY", stormData$EVTYPE)
+  stormData$EVTYPE <- gsub("WINTER.*", "WINTER", stormData$EVTYPE)
+  stormData$EVTYPE <- gsub("RIP CURRENT.*", "RIP CURRENT", stormData$EVTYPE)
+
 ```
 
 The events causing more fatalities and injuries are treated separtely.  
@@ -73,12 +121,11 @@ Finding the events causing financial damages.
 The damages are separated as crop damages and property damages. The damages are provided in 2 columns.
 The value part in one of the column like (CROPDMG and PROPDMG) and the exponent part in other column (CROPDMGEXP and PROPDMGEXP). The exponent part could either be a number or it can be a character like K, M, B, denoting kilo, Mega and Billion etc.  
 To calculate, value should be multiplied with exponent (raised to 10).  
-For this, the exponent column in the data is converted to upper case. Then each character in(H,K,M,B) is mapped to corresponding numerical value. All other characters (like ?,-,, etc) are mapped to 0 (so that 10^0 == 1).
-A column is added for each of the property and crop damage in the existing data. Then a new column 
-'totalDamage' is added using the below formula  
-"totalDamage = propdmg * 10^propexp + cropdmg * 10^cropexp"  
 
-Finally the totalDamage caused by each of the different event is found and the top 10 events are stored.
+To accomplish this, the exponent column in the data is converted to upper case. Then each exponent character is mapped to corresponding numerical value. All the other characters (like ?,-,, etc) are mapped to 0 (so that 10^0 == 1). A column is added for each of the property and crop damage exponent in the existing data viz. propexp and cropexp. Then a new column 'totalDamage' is added using the below formula  
+  "totalDamage = propdmg * 10^propexp + cropdmg * 10^cropexp"  
+
+Finally the sum of totalDamage caused by each of the different event is found and the top 10 events are stored.
 ```{r damage_analysis}
 # convert all to upper case
   stormData$PROPDMGEXP <- toupper(stormData$PROPDMGEXP)
@@ -87,21 +134,24 @@ Finally the totalDamage caused by each of the different event is found and the t
   stormData[!grepl("[K|M|H|B|0-9]", stormData$PROPDMGEXP), "PROPDMGEXP"] <- 0
   stormData[!grepl("[K|M|H|B|0-9]", stormData$CROPDMGEXP), "CROPDMGEXP"] <- 0
   
-# map for character vs exponential values.
+# map for character vs exponent value.
   char <- c(0,1,2,3,4,5,6,7,8,9,"H","K","M","B")  
   val <- c(0,1,2,3,4,5,6,7,8,9,2,3,6,9)
   expVsVal <- data.frame(char, val)
   
+# merging with original data to add two new columns propexp and cropexp.
   colnames(expVsVal) <- c("char", "propexp")
   stormData <- merge(x = stormData, y = expVsVal, by.x = "PROPDMGEXP", by.y = "char")
   
   colnames(expVsVal) <- c("char", "cropexp")
   stormData <- merge(x = stormData, y = expVsVal, by.x = "CROPDMGEXP", by.y = "char")
   
+# adding a new column totaldamage, which is sum of property damage and crop damage.
   stormData <- mutate(stormData, totalDamage  = PROPDMG * 10 ^ propexp + CROPDMG * 10 ^ cropexp)
   
-# group events by total damage
+# finding the sum of totalDamage for each of the different event.
   totalDamageVsEvtType <- aggregate(totalDamage ~ EVTYPE, data = stormData, sum)
+
 # getting the events causing maximum damage
   totalDamageVsEvtType <- totalDamageVsEvtType[order(totalDamageVsEvtType$totalDamage, decreasing = TRUE), ]
   
