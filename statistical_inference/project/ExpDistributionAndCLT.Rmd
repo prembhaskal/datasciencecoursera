@@ -1,0 +1,124 @@
+---
+title: "Exponential Distribution and Central Limit Theorem"
+author: "Premkumar Bhaskal"
+date: "Tuesday, February 17, 2015"
+output: html_document
+---
+### Exponential Distribution and Central Limit Theorem
+
+### Summary
+This exercise tries to show the below mentioned points by running simulations on sample data.
+  1. The distribution of sample mean is centered around the population mean.
+  2. The sample data is less variable than the actual population data. 
+  3. The distribution of sample variance is centered around the population variance(theoretical variance).
+  4. As we increase the sample size, the distribution of sample mean tend to become a 'normal distribution', which is what the Central Limit Theorem states.
+
+```{r loading libraries}
+# required libraries
+  library(ggplot2)
+  library(knitr)
+```
+
+```{r setoptions, echo = FALSE}
+# setting global options.
+opts_chunk$set(fig.width = 12)
+```
+
+### Initializing the simulation data and variables.
+This exercises uses the expontial distribution. The exponential distribution can be simulated in R with rexp(n, lambda) where lambda is the rate parameter. The mean of exponential distribution is 1/lambda and the standard deviation is also 1/lambda.
+For this exercise the lambda has been set to 0.2 for all the simulations.
+```{r Intialize}
+
+totalIterations <- 1000
+sequence <- seq(1 : totalIterations)
+
+lambda <- 0.2
+n <- 40
+theoreticalMean <- 1 / lambda
+theoreticalStdDeviation <- 1 / lambda
+theoreticalVariance <- theoreticalStdDeviation ^ 2
+
+```
+
+
+### Plot of distribution of sample mean Vs theoretical mean (Population mean)
+The code here is trying to generate 40 exponentials,  take their mean, and repeat this process around 1000 times. Once we have the data from 1000 trials, we plot a density plot and find that the distribution of sample mean is centred around the theoretical mean. Or in other words, the distribution of sample means have an expected value of Population mean.
+
+The theoretical mean is 1/lambda = 1/0.2 = 5. The distribution of sample mean is closely centered around this value.
+
+```{r SampleMeanDistribution}
+
+meanOfAverages <- sapply(X = sequence, function(p) {
+  samples <- rexp(n, lambda)
+  round(mean(samples), 1)
+})
+
+dfMean <- data.frame("mean" = meanOfAverages)
+
+g <- ggplot()
+g <- g + geom_vline(aes(xintercept = theoreticalMean, size = 2, color = "theoretical_mean"))
+g <- g + geom_density(data = dfMean, aes(x = mean, color = "sample_mean"), size = 2)
+g <- g + labs(x = "x", y = "density")
+g <- g + ggtitle("sample mean vs theoretical mean")
+g <- g + xlim(0, 10)
+g <- g + scale_color_manual(values = c("sample_mean" = "red", "theoretical_mean" = "blue"))
+
+print(g)
+
+```
+
+### Plot of distribution of sample variance Vs Theoretical variance (Population variance)
+Like in the previous section, the code below is trying to plot the distribution of variance of 40 exponentials taken in around 
+1000 trials. The density plot shows that distribution of sample variance is centered around the theoretical variance (population variance).
+
+The theoretical variance is (1/lambda)^2 = 25. As you can see the distribution of sample variance is also centered around this value.
+
+``` {r SampleVarianceDistribution}
+varOfAverages <- sapply(X = sequence, function(p) {
+  samples <- rexp(n, lambda)
+  round(var(samples), 1)
+})
+
+dfVars <- data.frame("var" = varOfAverages)
+
+g <- ggplot()
+g <- g + geom_vline(aes(xintercept = theoreticalVariance, size = 2, color = "theoretical_variance"))
+g <- g + geom_density(data = dfVars, aes(x = var, color = "sample_variance"), size = 2)
+g <- g + labs(x = "x", y = "density")
+g <- g + ggtitle("sample variance vs theoretical variance")
+g <- g + xlim(0, 80)
+g <- g + scale_color_manual(values = c("sample_variance" = "red", "theoretical_variance" = "blue"))
+
+print(g)
+```
+
+### 
+As per Central Limit Theorem - The Distribution of average of IID variables becomes that of the Normal Distribution as the sample size increases.  
+In the previous section, you would have noticed that the distribution was not exactly centered at the population variance. This is because the sample size here is quite less (40). In this section we will show that when sample size increases, the distribution approaches the normal distribution, thus following the Central Limit Theorem.
+
+As done in above sections, the code is trying to simulate 1000 trials of sample means. But here the trials are done for 3 different
+sizes, 20, 40 and 80. You will see that the distribution approaches 'Normal Distribution' (the bell curve) as the sample size increases.
+``` {r CLT}
+sampleAverages <- function(n, df) {
+  varOfAverages <- sapply(X = df, function(p) {
+    samples <- rexp(n, lambda)
+    round(mean(samples), 1)
+  })
+}
+
+samples <- c(sampleAverages(20, seq(1 : totalIterations)), 
+             sampleAverages(40, seq(1 : totalIterations)),
+             sampleAverages(80, seq(1 : totalIterations)))
+sampleCounts <- factor(rep(c(20, 40, 80), each = totalIterations))
+
+samplesDf <- data.frame(x = samples, sampleSize = sampleCounts)
+
+g <- ggplot(data = samplesDf, aes(x = x))
+g <- g + geom_histogram(aes(y = ..density.., fill = sampleSize), binwidth = 0.1, colour = "black")
+g <- g + geom_density(size = 2, data = samplesDf, aes(x = x))
+g <- g + facet_grid(. ~ sampleSize)
+g <- g + ggtitle("normal distribution on increasing sample sizes")
+print(g)
+
+
+```

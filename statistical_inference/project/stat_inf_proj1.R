@@ -8,6 +8,9 @@ sequence <- seq(1 : totalIterations)
 
 lambda <- 0.2
 n <- 40
+theoreticalMean <- 1 / lambda
+theoreticalStdDeviation <- 1 / lambda
+theoreticalVariance <- theoreticalStdDeviation ^ 2
 
 meanOfAverages <- sapply(X = sequence, function(p) {
   samples <- rexp(n, lambda)
@@ -17,13 +20,12 @@ meanOfAverages <- sapply(X = sequence, function(p) {
 dfMean <- data.frame("mean" = meanOfAverages)
 
 g <- ggplot()
-g <- g + geom_density(data = dfMean, aes(x = mean, color = "sample_mean"), size = 2)
 g <- g + geom_vline(aes(xintercept = 1/lambda, size = 2, color = "theoretical_mean"))
+g <- g + geom_density(data = dfMean, aes(x = mean, color = "sample_mean"), size = 2)
 g <- g + labs(x = "x", y = "density")
 g <- g + ggtitle("sample mean vs theoretical mean")
 g <- g + xlim(0, 10)
-g <- g + scale_color_manual(name = "",
-                            values = c("sample_mean" = "red", "theoretical_mean" = "blue"))
+g <- g + scale_color_manual(values = c("sample_mean" = "red", "theoretical_mean" = "blue"))
 
 print(g)
 
@@ -39,7 +41,7 @@ dfVars <- data.frame("var" = varOfAverages)
 
 g <- ggplot()
 g <- g + geom_density(data = dfVars, aes(x = var, color = "sample_variance"), size = 2)
-g <- g + geom_vline(aes(xintercept = 1/lambda, size = 2, color = "theoretical_variance"))
+g <- g + geom_vline(aes(xintercept = 1/lambda ^ 2, size = 2, color = "theoretical_variance"))
 g <- g + labs(x = "x", y = "density")
 g <- g + ggtitle("sample variance vs theoretical variance")
 # g <- g + xlim(0, 10)
