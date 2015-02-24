@@ -1,0 +1,90 @@
+---
+title: "Analysis of ToothGrowth data"
+author: "Premkumar Bhaskal"
+date: "Sunday, February 22, 2015"
+output: html_document
+---
+
+### Analysis of the ToothGrowth Data
+
+### Summary
+This Exercise is to perform the analysis of the ToothGrowth data in R.
+Basically the data is about the tooth growth as a affect of 2 supplements VC and OJ, with different doses of 0.5, 1.0 and 2.0.
+We first explore the data using the exploratory data analysis techniques.
+Then we perform two group hypothesis testing to compare the mean of the distribution of the ToothGrowth by two different supplements.
+
+```{r loading libraries}
+# required libraries
+  library(ggplot2)
+  library(knitr)
+```
+```{r setoptions, echo = FALSE}
+# setting global options.
+opts_chunk$set(fig.width = 12)
+```
+
+### Exploring the data
+```{r exploring data}
+data(ToothGrowth)
+head(ToothGrowth)
+
+nrow(ToothGrowth)
+summary(ToothGrowth)
+
+unique(ToothGrowth$supp)
+
+unique(ToothGrowth[,c("supp", "dose")])
+```
+
+
+### tooth growth vs supplement doses.
+``` {r plotting the data}
+## finding the average length of tooth growth grouped by supplements and doses.
+toothGrowthBySuppDoes = aggregate(len ~ supp + dose, data = ToothGrowth, mean)
+
+## plot of average growth Vs supplement_n_does
+# g <- ggplot(data = toothGrowthBySuppDoes, aes(x = paste(supp,"-",dose), y = len))
+g <- ggplot(data = toothGrowthBySuppDoes, aes(x = dose, y = len))
+g <- g + geom_bar(stat = "identity")
+g <- g + facet_grid(supp ~ .)
+g <- g + labs(x = "dose used", y = "average tooth length")
+g <- g + ggtitle("bar plot of average tooth growth vs dose grouped by different suppplements used")
+print(g)
+```
+
+
+### two group testing - Hypothesis testing
+We are doing a two group hypothesis testing assuming the NULL HYPOTHESIS that mean of the distribution of tooth growth is same 
+on use of the two supplements (VC and OJ).
+
+
+#### Z (97.5th quantile), in our case, n = 10, therefore (degrees of freedom)df = 9, so 
+```{r z_quantile}
+Z_1minusAlpha  = qt(0.975, df = 9)
+Z_1minusAlpha
+```
+
+#### testing supplement dose of 0.5
+```{r dose1 testing}
+dose1Data <- ToothGrowth[ToothGrowth$dose == 0.5,]
+t_test <- t.test(len ~ supp, paired = FALSE, var.equal = FALSE, data = dose1Data)
+```
+Here we see that the test statistic `r round(t_test$statistic,2)` is greater than the 97.5 quantile (Z(1-alpha)) of 2.26. so we reject the NULL hypothesis.
+
+#### testing supplement dose of 1.0
+```{r dose2 testing}
+dose2Data <- ToothGrowth[ToothGrowth$dose == 1.0,]
+t.test(len ~ supp, paired = FALSE, var.equal = FALSE, data = dose2Data)
+```
+Again here we see since test_statistic `r round(t_test$statistic,2)` is greater than the Z_quantile (97.5%) of 2.26, so we reject the NULL hypothesis.
+
+#### testing supplement dose of 2.0
+````{r dose3 testing}
+dose3Data <- ToothGrowth[ToothGrowth$dose == 2,]
+t.test(len ~ supp, paired = FALSE, var.equal = FALSE, data = dose1Data)
+```
+
+finally since the absolute test Statistic `r round(t_test$statistic,2)` is lesser than Z_1minusAlpha, we FAIL to reject the NULL hypothesis, so the 2 data groups have same mean.
+
+### Conclusion
+By hypothesis testing, we conclude that ToothGrowth distribution of supplements when taken in dose of 2.0, have a similar mean.

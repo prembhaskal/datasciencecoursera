@@ -28,7 +28,7 @@ opts_chunk$set(fig.width = 12)
 This exercises uses the expontial distribution. The exponential distribution can be simulated in R with rexp(n, lambda) where lambda is the rate parameter. The mean of exponential distribution is 1/lambda and the standard deviation is also 1/lambda.
 For this exercise the lambda has been set to 0.2 for all the simulations.
 ```{r Intialize}
-
+set.seed(235071)
 totalIterations <- 1000
 sequence <- seq(1 : totalIterations)
 
@@ -41,10 +41,8 @@ theoreticalVariance <- theoreticalStdDeviation ^ 2
 ```
 
 
-### Plot of distribution of sample mean Vs theoretical mean (Population mean)
-The code here is trying to generate 40 exponentials,  take their mean, and repeat this process around 1000 times. Once we have the data from 1000 trials, we plot a density plot and find that the distribution of sample mean is centred around the theoretical mean. Or in other words, the distribution of sample means have an expected value of Population mean.
-
-The theoretical mean is 1/lambda = 1/0.2 = 5. The distribution of sample mean is closely centered around this value.
+### sample mean Vs theoretical mean (Population mean)
+The code here is trying to generate 40 exponentials, take their mean, and repeat this process around 1000 times. Once we have the data from 1000 trials. To get the sample mean, we take the mean of these 1000 trials.
 
 ```{r SampleMeanDistribution}
 
@@ -52,6 +50,18 @@ meanOfAverages <- sapply(X = sequence, function(p) {
   samples <- rexp(n, lambda)
   round(mean(samples), 1)
 })
+
+sampleMean <- round(mean(meanOfAverages), 3)
+
+```
+
+The sample mean is equal to `r sampleMean`, which is very close to the theoretical mean `r theoreticalMean`. This agrees with the theory that the sample mean is an estimator of the population mean.
+
+
+### Plot of Sample Mean Vs Theoretical Mean
+We plot a density plot of these 1000 trials and find that the distribution of sample mean is centred around the theoretical mean. Or in other words, the distribution of sample means have an expected value of Population mean.
+
+```{r SampleMeanPlot}
 
 dfMean <- data.frame("mean" = meanOfAverages)
 
@@ -67,11 +77,23 @@ print(g)
 
 ```
 
-### Plot of distribution of sample variance Vs Theoretical variance (Population variance)
+### variance of the sample vs the theoretical variance of the distribution.
+```{r SampleVariance}
+sampleVariance <- round(var(meanOfAverages), 3)
+```
+
+The sample variance is equal to `r sampleVariance`. Theoretically the variance of the sample mean is equal to
+(population_variance)/sample_size.
+Here the population variance is equal to `r theoreticalVariance`. Dividing it by sample size (40) we get 
+`r theoreticalVariance/40`. Thus the result from the simulation is in accordance with the theory.
+
+
+### Plot of distribution of sample variance Vs population variance
+To make it more concrete we will run simulations to show that the sample variance estimates the population variance.
 Like in the previous section, the code below is trying to plot the distribution of variance of 40 exponentials taken in around 
 1000 trials. The density plot shows that distribution of sample variance is centered around the theoretical variance (population variance).
 
-The theoretical variance is (1/lambda)^2 = 25. As you can see the distribution of sample variance is also centered around this value.
+The theoretical variance is (1/lambda)^2 = 25. As you can see the distribution of sample variance is also centered around this value. This proves the theory that the sample variance estimates the population variance.
 
 ``` {r SampleVarianceDistribution}
 varOfAverages <- sapply(X = sequence, function(p) {
